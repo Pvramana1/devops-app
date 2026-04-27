@@ -12,12 +12,6 @@ pipeline {
 
     stages {
 
-        stage('Clone Code') {
-            steps {
-                git branch: 'main', url: 'https://github.com/Pvramana1/devops-app.git'
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
                 sh '''
