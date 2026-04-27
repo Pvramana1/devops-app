@@ -1,0 +1,19 @@
+{
+  "name": "devops-app",
+  "version": "1.0.0",
+  "description": "DevOps CI/CD App",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pvramana1/devops-app.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
