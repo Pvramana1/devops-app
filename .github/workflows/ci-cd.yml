@@ -45,20 +45,24 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Setup gcloud
+      - name: Setup gcloud CLI
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Configure Docker for GCR
         run: gcloud auth configure-docker
 
-      - name: Debug Image Name
-        run: echo "IMAGE=$IMAGE"
+      - name: Debug Variables
+        run: |
+          echo "IMAGE=${{ env.IMAGE }}"
+          echo "SHA=${{ github.sha }}"
 
-      - name: Build Docker Image
-        run: docker build -t $IMAGE:${{ github.sha }} .
+      - name: Build Docker Image (SAFE)
+        run: |
+          docker build -t ${{ env.IMAGE }}:${{ github.sha }} .
 
       - name: Push Docker Image
-        run: docker push $IMAGE:${{ github.sha }}
+        run: |
+          docker push ${{ env.IMAGE }}:${{ github.sha }}
 
   deploy:
     name: Deploy to GKE
@@ -81,7 +85,7 @@ jobs:
           location: ${{ secrets.GKE_ZONE }}
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Deploy to Kubernetes
+      - name: Deploy to Kubernetes (SAFE)
         run: |
-          kubectl set image deployment/my-app my-app=$IMAGE:${{ github.sha }} -n ${{ secrets.GKE_NAMESPACE }}
+          kubectl set image deployment/my-app my-app=${{ env.IMAGE }}:${{ github.sha }} -n ${{ secrets.GKE_NAMESPACE }}
           kubectl rollout status deployment/my-app -n ${{ secrets.GKE_NAMESPACE }}
