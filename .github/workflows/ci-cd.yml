@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 env:
   PROJECT_ID: internal-sandbox-446612
@@ -14,14 +17,32 @@ env:
   ZONE: asia-south1-a
 
 jobs:
-  build-deploy:
+
+  # ✅ 1. TEST JOB (NEW)
+  test:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # ✅ Auth (correct way)
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+
+  # ✅ 2. BUILD & DEPLOY JOB
+  build-deploy:
+    needs: test   # 👈 ensures test runs first
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # ✅ Auth
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
         with:
@@ -43,7 +64,7 @@ jobs:
         run: |
           docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/$IMAGE:${{ github.sha }}
 
-      # ✅ GKE
+      # ✅ GKE Deploy
       - name: Get GKE credentials
         uses: google-github-actions/get-gke-credentials@v2
         with:
