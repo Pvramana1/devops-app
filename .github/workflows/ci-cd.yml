@@ -42,6 +42,7 @@ jobs:
 
     - name: Install kubectl
       run: |
+        kubectl version --client
         gcloud components install kubectl -q
 
     - name: Connect to GKE
