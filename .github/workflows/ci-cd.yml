@@ -40,11 +40,6 @@ jobs:
       run: |
         docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/$IMAGE:${{ github.sha }}
 
-    - name: Install kubectl
-      run: |
-        kubectl version --client
-        gcloud components install kubectl -q
-
     - name: Connect to GKE
       run: |
         gcloud container clusters get-credentials $CLUSTER --zone $ZONE
