@@ -40,6 +40,11 @@ jobs:
       run: |
         docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/$IMAGE:${{ github.sha }}
 
+    - name: Install kubectl and GKE plugin
+      run: |
+        gcloud components install kubectl -q
+        gcloud components install gke-gcloud-auth-plugin -q
+
     - name: Connect to GKE
       run: |
         gcloud container clusters get-credentials $CLUSTER --zone $ZONE
