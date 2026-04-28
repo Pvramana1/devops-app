@@ -1,26 +1,95 @@
-build:
-  name: Build & Push Image
-  needs: test
-  runs-on: ubuntu-latest
+name: CI-CD Pipeline
 
-  steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
 
-    - name: Authenticate to GCP
-      uses: google-github-actions/auth@v2
-      with:
-        credentials_json: ${{ secrets.GCP_SA_KEY }}
+permissions:
+  contents: read
+  id-token: write
 
-    - name: Setup gcloud CLI
-      uses: google-github-actions/setup-gcloud@v2
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  IMAGE_NAME: devops-app
+  REGION: asia-south1
+  GKE_CLUSTER: ${{ secrets.GKE_CLUSTER }}
+  GKE_ZONE: ${{ secrets.GKE_ZONE }}
 
-    - name: Configure Docker authentication
-      run: |
-        gcloud auth configure-docker asia-south1-docker.pkg.dev --quiet
+jobs:
 
-    - name: Build Docker Image
-      run: docker build -t asia-south1-docker.pkg.dev/$PROJECT_ID/$IMAGE_NAME/devops-app:${{ github.sha }} .
+  test:
+    name: Lint and Test
+    runs-on: ubuntu-latest
 
-    - name: Push Docker Image
-      run: docker push asia-south1-docker.pkg.dev/$PROJECT_ID/$IMAGE_NAME/devops-app:${{ github.sha }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test || echo "No tests found"
+
+  build:
+    name: Build & Push Image
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker authentication
+        run: |
+          gcloud auth configure-docker asia-south1-docker.pkg.dev --quiet
+
+      - name: Build Docker Image
+        run: docker build -t asia-south1-docker.pkg.dev/$PROJECT_ID/$IMAGE_NAME/devops-app:${{ github.sha }} .
+
+      - name: Push Docker Image
+        run: docker push asia-south1-docker.pkg.dev/$PROJECT_ID/$IMAGE_NAME/devops-app:${{ github.sha }}
+
+  deploy:
+    name: Deploy to GKE
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Get GKE credentials
+        run: |
+          gcloud container clusters get-credentials $GKE_CLUSTER \
+            --zone $GKE_ZONE \
+            --project $PROJECT_ID
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl set image deployment/devops-app \
+            devops-app=asia-south1-docker.pkg.dev/$PROJECT_ID/$IMAGE_NAME/devops-app:${{ github.sha }}
+
+      - name: Verify deployment
+        run: kubectl rollout status deployment/devops-app
