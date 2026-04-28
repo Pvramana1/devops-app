@@ -51,18 +51,31 @@ jobs:
       - name: Configure Docker for GCR
         run: gcloud auth configure-docker
 
+      # 🔍 Debug (helps you see values in logs)
       - name: Debug Variables
         run: |
           echo "IMAGE=${{ env.IMAGE }}"
           echo "SHA=${{ github.sha }}"
+          pwd
+          ls -la
 
-      - name: Build Docker Image (SAFE)
+      # 🔥 FIXED BUILD STEP (NO MORE buildx ERROR)
+      - name: Build Docker Image
+        shell: bash
         run: |
-          docker build -t ${{ env.IMAGE }}:${{ github.sha }} .
+          set -e
+          IMAGE="${{ env.IMAGE }}"
+          TAG="${{ github.sha }}"
+          echo "Building image: $IMAGE:$TAG"
+          docker build -t "$IMAGE:$TAG" .
 
+      # 🔥 SAFE PUSH STEP
       - name: Push Docker Image
+        shell: bash
         run: |
-          docker push ${{ env.IMAGE }}:${{ github.sha }}
+          IMAGE="${{ env.IMAGE }}"
+          TAG="${{ github.sha }}"
+          docker push "$IMAGE:$TAG"
 
   deploy:
     name: Deploy to GKE
@@ -85,7 +98,10 @@ jobs:
           location: ${{ secrets.GKE_ZONE }}
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Deploy to Kubernetes (SAFE)
+      - name: Deploy to Kubernetes
+        shell: bash
         run: |
-          kubectl set image deployment/my-app my-app=${{ env.IMAGE }}:${{ github.sha }} -n ${{ secrets.GKE_NAMESPACE }}
+          IMAGE="${{ env.IMAGE }}"
+          TAG="${{ github.sha }}"
+          kubectl set image deployment/my-app my-app="$IMAGE:$TAG" -n ${{ secrets.GKE_NAMESPACE }}
           kubectl rollout status deployment/my-app -n ${{ secrets.GKE_NAMESPACE }}
