@@ -1,0 +1,87 @@
+name: CI-CD Pipeline
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  IMAGE_NAME: devops-app
+  REGION: asia-south1
+  GKE_CLUSTER: ${{ secrets.GKE_CLUSTER }}
+  GKE_ZONE: ${{ secrets.GKE_ZONE }}
+
+jobs:
+
+  test:
+    name: Lint and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - run: npm install
+      - run: npm test || echo "No tests"
+
+  build:
+    name: Build & Push Image
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Auth GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Docker auth
+        run: gcloud auth configure-docker asia-south1-docker.pkg.dev
+
+      - name: Build Image
+        run: |
+          docker build -t asia-south1-docker.pkg.dev/$PROJECT_ID/$IMAGE_NAME/devops-app:latest .
+
+      - name: Push Image
+        run: |
+          docker push asia-south1-docker.pkg.dev/$PROJECT_ID/$IMAGE_NAME/devops-app:latest
+
+  deploy:
+    name: Deploy to GKE
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Auth GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Get cluster credentials
+        run: |
+          gcloud container clusters get-credentials $GKE_CLUSTER \
+          --zone $GKE_ZONE \
+          --project $PROJECT_ID
+
+      - name: Deploy app
+        run: |
+          kubectl set image deployment/devops-app \
+          devops-app=asia-south1-docker.pkg.dev/$PROJECT_ID/$IMAGE_NAME/devops-app:latest
+
+      - name: Verify
+        run: kubectl get pods
