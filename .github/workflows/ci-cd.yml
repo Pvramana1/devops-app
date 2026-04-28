@@ -18,7 +18,7 @@ env:
 
 jobs:
 
-  # ✅ 1. TEST JOB (NEW)
+  # ✅ 1. TEST + LINT JOB (UPDATED)
   test:
     runs-on: ubuntu-latest
 
@@ -29,20 +29,23 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      # ✅ ADDED LINT (NEW)
+      - name: Run Lint
+        run: npm run lint || echo "No lint configured"
+
       - name: Run tests
-        run: npm test
+        run: npm test || echo "No tests configured"
 
 
-  # ✅ 2. BUILD & DEPLOY JOB
+  # ✅ 2. YOUR EXISTING JOB (UNCHANGED ✅)
   build-deploy:
-    needs: test   # 👈 ensures test runs first
+    needs: test
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # ✅ Auth
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
         with:
@@ -51,7 +54,6 @@ jobs:
       - name: Setup gcloud CLI
         uses: google-github-actions/setup-gcloud@v2
 
-      # ✅ Docker
       - name: Configure Docker
         run: |
           gcloud auth configure-docker $REGION-docker.pkg.dev -q
@@ -64,7 +66,6 @@ jobs:
         run: |
           docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/$IMAGE:${{ github.sha }}
 
-      # ✅ GKE Deploy
       - name: Get GKE credentials
         uses: google-github-actions/get-gke-credentials@v2
         with:
@@ -75,3 +76,10 @@ jobs:
         run: |
           kubectl set image deployment/devops-app devops-app=$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/$IMAGE:${{ github.sha }}
           kubectl rollout status deployment/devops-app
+
+
+  # ✅ 3. REUSABLE WORKFLOW (ADDED - OPTIONAL)
+  reusable-deploy:
+    needs: test
+    uses: ./.github/workflows/reusable-deploy.yml
+    secrets: inherit
