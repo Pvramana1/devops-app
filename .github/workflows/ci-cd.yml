@@ -2,106 +2,52 @@ name: CI-CD Pipeline
 
 on:
   push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
+    branches:
+      - main
 
 env:
-  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  IMAGE: gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-app
+  PROJECT_ID: internal-sandbox-446612
+  REGION: asia-south1
+  REPO: my-repo
+  IMAGE: devops-app
+  CLUSTER: my-cluster
+  ZONE: asia-south1-a
 
 jobs:
-
-  test:
-    name: Test
+  build-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
+    - name: Authenticate to GCP
+      run: |
+        echo '${{ secrets.GCP_SA_KEY }}' > key.json
+        gcloud auth activate-service-account --key-file=key.json
+        gcloud config set project $PROJECT_ID
 
-      - name: Install dependencies
-        run: npm install
+    - name: Configure Docker
+      run: |
+        gcloud auth configure-docker $REGION-docker.pkg.dev -q
 
-      - name: Run tests
-        run: npm test || echo "No tests found"
+    - name: Build Docker Image
+      run: |
+        docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/$IMAGE:${{ github.sha }} .
 
-  build:
-    name: Build & Push Docker Image
-    needs: test
-    runs-on: ubuntu-latest
+    - name: Push Docker Image
+      run: |
+        docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPO/$IMAGE:${{ github.sha }}
 
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+    - name: Install kubectl
+      run: |
+        gcloud components install kubectl -q
 
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+    - name: Connect to GKE
+      run: |
+        gcloud container clusters get-credentials $CLUSTER --zone $ZONE
 
-      - name: Setup gcloud CLI
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker
-
-      # 🔍 Debug (helps you see values in logs)
-      - name: Debug Variables
-        run: |
-          echo "IMAGE=${{ env.IMAGE }}"
-          echo "SHA=${{ github.sha }}"
-          pwd
-          ls -la
-
-      # 🔥 FIXED BUILD STEP (NO MORE buildx ERROR)
-      - name: Build Docker Image
-        shell: bash
-        run: |
-          set -e
-          IMAGE="${{ env.IMAGE }}"
-          TAG="${{ github.sha }}"
-          echo "Building image: $IMAGE:$TAG"
-          docker build -t "$IMAGE:$TAG" .
-
-      # 🔥 SAFE PUSH STEP
-      - name: Push Docker Image
-        shell: bash
-        run: |
-          IMAGE="${{ env.IMAGE }}"
-          TAG="${{ github.sha }}"
-          docker push "$IMAGE:$TAG"
-
-  deploy:
-    name: Deploy to GKE
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Get GKE credentials
-        uses: google-github-actions/get-gke-credentials@v2
-        with:
-          cluster_name: ${{ secrets.GKE_CLUSTER }}
-          location: ${{ secrets.GKE_ZONE }}
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-
-      - name: Deploy to Kubernetes
-        shell: bash
-        run: |
-          IMAGE="${{ env.IMAGE }}"
-          TAG="${{ github.sha }}"
-          kubectl set image deployment/my-app my-app="$IMAGE:$TAG" -n ${{ secrets.GKE_NAMESPACE }}
-          kubectl rollout status deployment/my-app -n ${{ secrets.GKE_NAMESPACE }}
+    - name: Deploy to GKE
+      run: |
+        kubectl set image deployment/devops-app devops-app=$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/$IMAGE:${{ github.sha }}
+        kubectl rollout status deployment/devops-app
