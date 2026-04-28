@@ -76,10 +76,3 @@ jobs:
         run: |
           kubectl set image deployment/devops-app devops-app=$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/$IMAGE:${{ github.sha }}
           kubectl rollout status deployment/devops-app
-
-
-  # ✅ 3. REUSABLE WORKFLOW (ADDED - OPTIONAL)
-  reusable-deploy:
-    needs: test
-    uses: ./.github/workflows/reusable-deploy.yml
-    secrets: inherit
