@@ -1,0 +1,8 @@
+name: Test Reusable Workflow
+
+on:
+  workflow_dispatch:
+
+jobs:
+  call-reusable:
+    uses: ./.github/workflows/reusable-demo.yml

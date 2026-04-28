@@ -1,0 +1,15 @@
+name: Reusable Demo Workflow
+
+on:
+  workflow_call:
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print message
+        run: echo "Reusable workflow is working"
+
+      - name: Show branch
+        run: echo "Branch is ${{ github.ref }}"
