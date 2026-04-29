@@ -4,8 +4,6 @@ stages:
 * test
 * deploy
 
-# ---------------- BUILD ----------------
-
 build_job:
 stage: build
 image: node:18
@@ -13,9 +11,7 @@ script:
 - echo "Installing dependencies"
 - npm install
 - echo "Building app"
-- npm run build || echo "No build script"
-
-# ---------------- TEST ----------------
+- npm run build || echo "No build step"
 
 test_job:
 stage: test
@@ -23,15 +19,13 @@ image: node:18
 script:
 - echo "Running tests"
 - npm install
-- npm test || echo "No tests defined"
-
-# ---------------- DEPLOY ----------------
+- npm test || echo "No tests found"
 
 deploy_job:
 stage: deploy
 image: alpine:latest
 script:
-- echo "Deploying application..."
+- echo "Deploying application"
 only:
 - main
 
