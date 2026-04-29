@@ -4,46 +4,39 @@ stages:
   - deploy
 
 variables:
-  IMAGE: "$CI_REGISTRY_IMAGE/devops-app"
-  DOCKER_HOST: tcp://docker:2375/
-  DOCKER_TLS_CERTDIR: ""
+  NODE_ENV: "production"
 
-# -------------------------
-# BUILD
-# -------------------------
+# ---------------- BUILD ----------------
 build_job:
   stage: build
-  image: docker:latest
-  services:
-    - docker:dind
-  script:
-    - echo "Building Docker image"
-    - docker build -t $IMAGE:$CI_COMMIT_SHA .
-  artifacts:
-    paths:
-      - image.tar
-
-# -------------------------
-# TEST
-# -------------------------
-test_job:
-  stage: test
-  image: python:3.10
+  image: node:18
   script:
     - echo "Installing dependencies"
-    - pip install -r requirements.txt || echo "No requirements.txt"
+    - npm install
+    - npm run build
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 hour
+
+# ---------------- TEST ----------------
+test_job:
+  stage: test
+  image: node:18
+  script:
     - echo "Running tests"
+    - npm install
+    - npm test
   cache:
     paths:
-      - .cache/pip
+      - node_modules/
 
-# -------------------------
-# DEPLOY
-# -------------------------
+# ---------------- DEPLOY ----------------
 deploy_job:
   stage: deploy
-  image: google/cloud-sdk:latest
+  image: alpine:latest
   script:
-    - echo "Deploy step"
+    - echo "Deploying application"
+    - echo "Add your deploy script here"
   only:
     - main
