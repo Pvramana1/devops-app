@@ -1,27 +1,36 @@
 stages:
-    - build
-    - test
-    - deploy
+  - build
+  - test
 
-# Job for the build stage
-build_job:
-    stage: build
-    script:
-        - echo "Building the project..."
-        - make build
+variables:
+  NODE_ENV: "test"
 
-# Job for the test stage
-test_job:
-    stage: test
-    script:
-        - echo "Running tests..."
-        - make test
+# --------------------
+# BUILD STAGE
+# --------------------
+build-job:
+  stage: build
+  image: node:18
+  script:
+    - echo "Installing dependencies..."
+    - npm install
+    - echo "Building application..."
+    - npm run build
+  artifacts:
+    paths:
+      - node_modules/
+      - dist/
+    expire_in: 1 hour
 
-# Job for the deploy stage
-deploy_job:
-    stage: deploy
-    script:
-        - echo "Deploying to production..."
-        - ./deploy.sh
-    environment:
-        name: production
+# --------------------
+# TEST STAGE
+# --------------------
+test-job:
+  stage: test
+  image: node:18
+  script:
+    - echo "Running tests..."
+    - npm install
+    - npm test
+  dependencies:
+    - build-job
