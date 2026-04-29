@@ -17,3 +17,5 @@ deploy_job:
   stage: deploy
   script:
     - echo "Deploy stage successful"
+  only:
+    - main
