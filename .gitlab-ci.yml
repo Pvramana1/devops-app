@@ -9,7 +9,7 @@ variables:
   DOCKER_TLS_CERTDIR: ""
 
 # -------------------------
-# BUILD STAGE
+# BUILD
 # -------------------------
 build_job:
   stage: build
@@ -19,34 +19,31 @@ build_job:
   script:
     - echo "Building Docker image"
     - docker build -t $IMAGE:$CI_COMMIT_SHA .
-    - docker save $IMAGE:$CI_COMMIT_SHA > image.tar
   artifacts:
     paths:
       - image.tar
 
 # -------------------------
-# TEST STAGE
+# TEST
 # -------------------------
 test_job:
   stage: test
   image: python:3.10
   script:
-    - echo "Installing dependencies (if any)"
-    - pip install -r requirements.txt || echo "No requirements.txt found"
+    - echo "Installing dependencies"
+    - pip install -r requirements.txt || echo "No requirements.txt"
     - echo "Running tests"
   cache:
     paths:
       - .cache/pip
 
 # -------------------------
-# DEPLOY STAGE
+# DEPLOY
 # -------------------------
 deploy_job:
   stage: deploy
   image: google/cloud-sdk:latest
   script:
-    - echo "Preparing deploy step"
-    - echo "$GCP_KEY" > key.json || echo "No GCP key provided"
-    - echo "Deploy skipped for now"
+    - echo "Deploy step"
   only:
     - main
