@@ -1,36 +1,30 @@
 stages:
   - build
   - test
+  - deploy
 
-variables:
-  NODE_ENV: "test"
-
-# --------------------
-# BUILD STAGE
-# --------------------
-build-job:
+build_job:
   stage: build
-  image: node:18
+  image: docker:latest
+  services:
+    - docker:dind
   script:
-    - echo "Installing dependencies..."
-    - npm install
-    - echo "Building application..."
-    - npm run build
-  artifacts:
-    paths:
-      - node_modules/
-      - dist/
-    expire_in: 1 hour
+    - echo "Building Docker Image..."
+    - docker build -t devops-app .
 
-# --------------------
-# TEST STAGE
-# --------------------
-test-job:
+test_job:
   stage: test
   image: node:18
   script:
-    - echo "Running tests..."
+    - echo "Running Tests..."
     - npm install
     - npm test
-  dependencies:
-    - build-job
+
+deploy_job:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - echo "Deploying Application..."
+    - ./deploy.sh
+  only:
+    - main
