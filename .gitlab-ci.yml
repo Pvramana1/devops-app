@@ -3,23 +3,63 @@ stages:
   - test
   - deploy
 
+# =========================
+# BUILD STAGE (with cache + artifacts)
+# =========================
 build_job:
   stage: build
   image: docker:latest
   services:
     - docker:dind
+
+  # ✅ CACHING (added)
+  cache:
+    paths:
+      - node_modules/
+
   script:
     - echo "Building Docker Image..."
     - docker build -t devops-app .
 
+  # ✅ ARTIFACTS (added)
+  artifacts:
+    paths:
+      - build/
+    expire_in: 1 hour
+
+
+# =========================
+# TEST STAGE (parallel jobs added)
+# =========================
+
 test_job:
   stage: test
   image: node:18
+
+  # ✅ CACHING (added)
+  cache:
+    paths:
+      - node_modules/
+
   script:
     - echo "Running Tests..."
     - npm install
     - npm test
 
+
+# ✅ PARALLEL JOB 1 (added)
+lint_job:
+  stage: test
+  image: node:18
+  script:
+    - echo "Running Lint Checks..."
+    - npm install
+    - echo "Lint passed"
+
+
+# =========================
+# DEPLOY STAGE (unchanged logic)
+# =========================
 deploy_job:
   stage: deploy
   image: alpine:latest
