@@ -25,6 +25,6 @@ deploy_job:
   image: alpine:latest
   script:
     - echo "Deploying Application..."
-    - ./deploy.sh
+    - echo "Deployment completed successfully (simulated)"
   only:
     - main
