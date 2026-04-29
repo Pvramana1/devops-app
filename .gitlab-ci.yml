@@ -4,29 +4,23 @@ stages:
   - deploy
 
 # -------------------------
-# VARIABLES
-# -------------------------
-variables:
-  IMAGE: "$CI_REGISTRY_IMAGE/devops-app"
-  DOCKER_HOST: tcp://docker:2375/
-  DOCKER_TLS_CERTDIR: ""
-
-# -------------------------
-# BUILD STAGE
+# BUILD
 # -------------------------
 build_job:
   stage: build
   image: docker:24.0.5
   services:
     - docker:24.0.5-dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_TLS_CERTDIR: ""
   script:
     - echo "Starting build stage"
-    - docker info
-    - docker build -t $IMAGE:$CI_COMMIT_SHA .
+    - docker build -t devops-app .
     - echo "Build completed"
 
 # -------------------------
-# TEST STAGE
+# TEST
 # -------------------------
 test_job:
   stage: test
@@ -36,7 +30,7 @@ test_job:
     - echo "Tests passed successfully"
 
 # -------------------------
-# DEPLOY STAGE
+# DEPLOY
 # -------------------------
 deploy_job:
   stage: deploy
