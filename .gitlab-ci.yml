@@ -3,22 +3,55 @@ stages:
   - test
   - deploy
 
+variables:
+  IMAGE: "$CI_REGISTRY_IMAGE/devops-app"
+
+# -------------------------
+# BUILD STAGE
+# -------------------------
 build_job:
   stage: build
-  image: alpine:latest
-  script:
-    - echo "Build stage running successfully"
+  image: docker:latest
+  services:
+    - docker:dind
 
+  script:
+    - docker build -t $IMAGE:$CI_COMMIT_SHA .
+    - docker save $IMAGE:$CI_COMMIT_SHA > image.tar
+
+  artifacts:
+    paths:
+      - image.tar
+
+# -------------------------
+# TEST STAGE (PARALLEL)
+# -------------------------
 test_job:
   stage: test
-  image: alpine:latest
-  script:
-    - echo "Test stage running successfully"
+  image: python:3.10
 
+  parallel: 2   # 🔥 parallel jobs
+
+  script:
+    - pip install -r requirements.txt
+    - pytest
+
+  cache:
+    paths:
+      - .cache/pip
+
+# -------------------------
+# DEPLOY STAGE
+# -------------------------
 deploy_job:
   stage: deploy
-  image: alpine:latest
+  image: google/cloud-sdk:latest
+
   script:
-    - echo "Deploy stage running successfully"
+    - echo "$GCP_KEY" > key.json
+    - gcloud auth activate-service-account --key-file=key.json
+    - gcloud container clusters get-credentials my-cluster --zone asia-south1-a
+    - kubectl apply -f k8s/
+
   only:
     - main
