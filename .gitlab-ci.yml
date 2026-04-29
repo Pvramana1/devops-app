@@ -1,23 +1,24 @@
 stages:
-
-* build
-* test
-* deploy
+  - build
+  - test
+  - deploy
 
 build_job:
-stage: build
-script:
-- echo "Build stage running"
+  stage: build
+  image: alpine:latest
+  script:
+    - echo "Build stage running successfully"
 
 test_job:
-stage: test
-script:
-- echo "Test stage running"
+  stage: test
+  image: alpine:latest
+  script:
+    - echo "Test stage running successfully"
 
 deploy_job:
-stage: deploy
-script:
-- echo "Deploy stage running"
-only:
-- main
-
+  stage: deploy
+  image: alpine:latest
+  script:
+    - echo "Deploy stage running successfully"
+  only:
+    - main
