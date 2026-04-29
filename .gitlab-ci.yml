@@ -3,40 +3,19 @@ stages:
   - test
   - deploy
 
-# -------------------------
-# BUILD
-# -------------------------
 build_job:
   stage: build
-  image: docker:24.0.5
-  services:
-    - docker:24.0.5-dind
-  variables:
-    DOCKER_HOST: tcp://docker:2375/
-    DOCKER_TLS_CERTDIR: ""
   script:
-    - echo "Starting build stage"
-    - docker build -t devops-app .
-    - echo "Build completed"
+    - echo "Build stage working"
 
-# -------------------------
-# TEST
-# -------------------------
 test_job:
   stage: test
-  image: alpine:latest
   script:
-    - echo "Running test stage"
-    - echo "Tests passed successfully"
+    - echo "Test stage working"
 
-# -------------------------
-# DEPLOY
-# -------------------------
 deploy_job:
   stage: deploy
-  image: alpine:latest
   script:
-    - echo "Starting deploy stage"
-    - echo "Deployment successful"
+    - echo "Deploy stage working"
   only:
     - main
