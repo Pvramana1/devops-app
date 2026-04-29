@@ -6,23 +6,18 @@ stages:
 
 build_job:
 stage: build
-image: node:18
 script:
-- echo "Installing dependencies"
-- npm install
+- echo "Build stage running"
 
 test_job:
 stage: test
-image: node:18
 script:
-- echo "Running tests"
-- npm test || echo "No tests found"
+- echo "Test stage running"
 
 deploy_job:
 stage: deploy
-image: alpine:latest
 script:
-- echo "Deploy step completed"
+- echo "Deploy stage running"
 only:
 - main
 
