@@ -6,16 +6,16 @@ stages:
 build_job:
   stage: build
   script:
-    - echo "Build stage working"
+    - echo "Build OK"
 
 test_job:
   stage: test
   script:
-    - echo "Test stage working"
+    - echo "Test OK"
 
 deploy_job:
   stage: deploy
   script:
-    - echo "Deploy stage working"
+    - echo "Deploy OK"
   only:
     - main
