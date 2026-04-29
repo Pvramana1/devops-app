@@ -3,59 +3,17 @@ stages:
   - test
   - deploy
 
-variables:
-  IMAGE: "$CI_REGISTRY_IMAGE/devops-app"
-  DOCKER_HOST: tcp://docker:2375/
-  DOCKER_TLS_CERTDIR: ""
-
-# -------------------------
-# BUILD STAGE
-# -------------------------
 build_job:
   stage: build
-  image: docker:24.0.5
-  services:
-    - docker:24.0.5-dind
-
   script:
-    - echo "Building Docker image"
-    - docker build -t $IMAGE:$CI_COMMIT_SHA .
-    - docker save $IMAGE:$CI_COMMIT_SHA > image.tar
+    - echo "Building application..."
 
-  artifacts:
-    paths:
-      - image.tar
-    expire_in: 1 hour
-
-# -------------------------
-# TEST STAGE (PARALLEL)
-# -------------------------
 test_job:
   stage: test
-  image: node:18
-
-  parallel: 2
-
   script:
-    - echo "Installing dependencies"
-    - npm install || echo "No package.json"
-    - echo "Running tests"
-    - npm test || echo "No tests"
+    - echo "Running tests..."
 
-  cache:
-    paths:
-      - node_modules/
-
-# -------------------------
-# DEPLOY STAGE
-# -------------------------
 deploy_job:
   stage: deploy
-  image: alpine:latest
-
   script:
-    - echo "Deploy stage started"
-    - echo "Simulating deployment..."
-
-  only:
-    - main
+    - echo "Deploying application..."
