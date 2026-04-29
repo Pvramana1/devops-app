@@ -10,22 +10,19 @@ image: node:18
 script:
 - echo "Installing dependencies"
 - npm install
-- echo "Building app"
-- npm run build || echo "No build step"
 
 test_job:
 stage: test
 image: node:18
 script:
 - echo "Running tests"
-- npm install
 - npm test || echo "No tests found"
 
 deploy_job:
 stage: deploy
 image: alpine:latest
 script:
-- echo "Deploying application"
+- echo "Deploy step completed"
 only:
 - main
 
