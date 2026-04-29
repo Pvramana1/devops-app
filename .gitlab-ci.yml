@@ -17,6 +17,7 @@ build_job:
   services:
     - docker:dind
   script:
+    - echo "Building Docker image"
     - docker build -t $IMAGE:$CI_COMMIT_SHA .
     - docker save $IMAGE:$CI_COMMIT_SHA > image.tar
   artifacts:
@@ -30,7 +31,8 @@ test_job:
   stage: test
   image: python:3.10
   script:
-    - pip install -r requirements.txt || echo "No requirements file"
+    - echo "Installing dependencies (if any)"
+    - pip install -r requirements.txt || echo "No requirements.txt found"
     - echo "Running tests"
   cache:
     paths:
@@ -43,7 +45,8 @@ deploy_job:
   stage: deploy
   image: google/cloud-sdk:latest
   script:
-    - echo "$GCP_KEY" > key.json
-    - echo "Deploy step (skipped for now)"
+    - echo "Preparing deploy step"
+    - echo "$GCP_KEY" > key.json || echo "No GCP key provided"
+    - echo "Deploy skipped for now"
   only:
     - main
