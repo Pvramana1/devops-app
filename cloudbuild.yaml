@@ -23,7 +23,7 @@ steps:
     - 'deployment/devops-app'
     - 'devops-app=asia-south1-docker.pkg.dev/$PROJECT_ID/devops-repo/devops-app:$SHORT_SHA'
   env:
-    - 'CLOUDSDK_COMPUTE_REGION=asia-south1'
+    - 'CLOUDSDK_COMPUTE_ZONE=asia-south1-a'
     - 'CLOUDSDK_CONTAINER_CLUSTER=my-cluster'
 
 images:
