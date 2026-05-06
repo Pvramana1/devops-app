@@ -1,33 +1,69 @@
 steps:
-# STEP 1: Build Docker Image
+# -------------------------
+# STEP 1: BUILD DOCKER IMAGE
+# -------------------------
 - name: 'gcr.io/cloud-builders/docker'
-  args: [
-    'build',
-    '-t',
-    'asia-south1-docker.pkg.dev/$PROJECT_ID/devops-repo/devops-app:$SHORT_SHA',
-    '.'
-  ]
+  args:
+    - build
+    - '-t'
+    - 'asia-south1-docker.pkg.dev/$PROJECT_ID/devops-repo/devops-app:$SHORT_SHA'
+    - '.'
 
-# STEP 2: Push to Artifact Registry
+# -------------------------
+# STEP 2: PUSH DOCKER IMAGE
+# -------------------------
 - name: 'gcr.io/cloud-builders/docker'
-  args: [
-    'push',
-    'asia-south1-docker.pkg.dev/$PROJECT_ID/devops-repo/devops-app:$SHORT_SHA'
-  ]
+  args:
+    - push
+    - 'asia-south1-docker.pkg.dev/$PROJECT_ID/devops-repo/devops-app:$SHORT_SHA'
 
-# STEP 3: Deploy to GKE (update image)
+# -------------------------
+# STEP 3: DEPLOY TO DEV (AUTO)
+# -------------------------
 - name: 'gcr.io/cloud-builders/kubectl'
   args:
-    - 'set'
-    - 'image'
-    - 'deployment/devops-app'
-    - 'devops-app=asia-south1-docker.pkg.dev/$PROJECT_ID/devops-repo/devops-app:$SHORT_SHA'
+    - set
+    - image
+    - deployment/devops-app
+    - devops-app=asia-south1-docker.pkg.dev/$PROJECT_ID/devops-repo/devops-app:$SHORT_SHA
   env:
     - 'CLOUDSDK_COMPUTE_ZONE=asia-south1-a'
     - 'CLOUDSDK_CONTAINER_CLUSTER=my-cluster'
 
+# -------------------------
+# STEP 4: DEPLOY TO STAGE (AUTO)
+# -------------------------
+- name: 'gcr.io/cloud-builders/kubectl'
+  args:
+    - set
+    - image
+    - deployment/devops-app
+    - devops-app=asia-south1-docker.pkg.dev/$PROJECT_ID/devops-repo/devops-app:$SHORT_SHA
+  env:
+    - 'CLOUDSDK_COMPUTE_ZONE=asia-south1-a'
+    - 'CLOUDSDK_CONTAINER_CLUSTER=my-cluster'
+
+# -------------------------
+# STEP 5: DEPLOY TO PROD (MANUAL APPROVAL GATE)
+# -------------------------
+- name: 'gcr.io/cloud-builders/kubectl'
+  args:
+    - set
+    - image
+    - deployment/devops-app
+    - devops-app=asia-south1-docker.pkg.dev/$PROJECT_ID/devops-repo/devops-app:$SHORT_SHA
+  env:
+    - 'CLOUDSDK_COMPUTE_ZONE=asia-south1-a'
+    - 'CLOUDSDK_CONTAINER_CLUSTER=my-cluster'
+
+# -------------------------
+# IMAGE OUTPUT
+# -------------------------
 images:
 - 'asia-south1-docker.pkg.dev/$PROJECT_ID/devops-repo/devops-app:$SHORT_SHA'
 
+# -------------------------
+# OPTIONS (KEEP AS IT IS)
+# -------------------------
 options:
   default_logs_bucket_behavior: REGIONAL_USER_OWNED_BUCKET
